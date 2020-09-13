@@ -1,4 +1,4 @@
-package ahihi.khoane.music_app;
+package ahihi.khoane.music_app.ui.main;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,27 +11,18 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.Manifest;
 import android.content.ContentResolver;
 import android.content.ContentUris;
-import android.content.Context;
-import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
-import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.squareup.picasso.Picasso;
-
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.List;
+
+import ahihi.khoane.music_app.model.AudioModel;
+import ahihi.khoane.music_app.R;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -40,14 +31,16 @@ public class MainActivity extends AppCompatActivity {
     RecyclerView mRecyclerView;
     Uri urltest = null;
     String urlimage = null;
-    ImageView imageView;
-    private RecyclerView.LayoutManager layoutManager;
+    ImageView mImageView;
+    private RecyclerView.LayoutManager mLayoutManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        checkPermission();
+        init();
+        onValue();
+        onEvent();
     }
 
 
@@ -60,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
                 ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
             }
         } else {
-            init();
+            getMusic();
         }
     }
 
@@ -73,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
                     if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE)
                             == PackageManager.PERMISSION_GRANTED) {
                         Toast.makeText(this, "Oke đúng k", Toast.LENGTH_SHORT).show();
-                        init();
+                        getMusic();
                     }
                 } else {
                     Toast.makeText(this, "Không ok rồi", Toast.LENGTH_SHORT).show();
@@ -105,18 +98,26 @@ public class MainActivity extends AppCompatActivity {
                 urltest = trackUri;
                 urlimage = albumId;
             } while (songCursor.moveToNext());
+            adapter.notifyDataSetChanged();
         }
     }
 
     private void init() {
-        imageView = findViewById(R.id.img);
+        mImageView = findViewById(R.id.img);
         mRecyclerView = findViewById(R.id.mReCyclerView);
-        getMusic();
-        layoutManager = new LinearLayoutManager(this);
-        mRecyclerView.setLayoutManager(layoutManager);
+
+        mLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLayoutManager);
         mRecyclerView.setItemAnimator(new DefaultItemAnimator());
         adapter = new AdapterAudio(this, arrayList);
-        adapter.notifyDataSetChanged();
         mRecyclerView.setAdapter(adapter);
+    }
+
+    private void onValue() {
+        checkPermission();
+    }
+
+    private void onEvent() {
+
     }
 }

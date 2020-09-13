@@ -1,4 +1,4 @@
-package ahihi.khoane.music_app;
+package ahihi.khoane.music_app.utils;
 
 import android.app.Notification;
 import android.content.Context;
@@ -10,6 +10,9 @@ import android.support.v4.media.session.MediaSessionCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import ahihi.khoane.music_app.R;
+import ahihi.khoane.music_app.model.AudioModel;
+
 public class CreateNotification {
     public static final String CHANNEL_ID = "channel1";
 
@@ -19,7 +22,7 @@ public class CreateNotification {
 
     public static Notification sNotification;
 
-    public static void createNotification(Context context,AudioModel audioModel, int playbutton, int pos, int size){
+    public static void createNotification(Context context, AudioModel audioModel, int playbutton, int pos, int size){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
             NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(context);
             MediaSessionCompat mediaSessionCompat = new MediaSessionCompat(context,"tag");

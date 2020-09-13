@@ -1,4 +1,4 @@
-package ahihi.khoane.music_app;
+package ahihi.khoane.music_app.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;

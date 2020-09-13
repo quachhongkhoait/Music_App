@@ -1,4 +1,4 @@
-package ahihi.khoane.music_app;
+package ahihi.khoane.music_app.ui.main;
 
 import android.content.Context;
 import android.content.Intent;
@@ -15,6 +15,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
+import ahihi.khoane.music_app.model.AudioModel;
+import ahihi.khoane.music_app.utils.HandlingMusic;
+import ahihi.khoane.music_app.ui.detail.PlayActivity;
+import ahihi.khoane.music_app.R;
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class AdapterAudio extends RecyclerView.Adapter<AdapterAudio.ViewHolder> {

@@ -1,43 +1,36 @@
-package ahihi.khoane.music_app;
+package ahihi.khoane.music_app.ui.detail;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.PersistableBundle;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
-import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import ahihi.khoane.music_app.utils.HandlingMusic;
+import ahihi.khoane.music_app.services.PlayMusicService;
+import ahihi.khoane.music_app.R;
+import ahihi.khoane.music_app.model.AudioModel;
+import ahihi.khoane.music_app.services.MusicService;
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class PlayActivity extends AppCompatActivity {
 
     private static final String TAG = "zzz";
-    NotificationManager mNotificationManager;
-
     private ServiceConnection musicConnection;
     private MusicService musicSrv;
     private Intent playIntent;
@@ -58,50 +51,34 @@ public class PlayActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play);
         init();
-        addData();
         onClick();
-//        service();
 
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-//            createChanel();
-//        }
+//        Intent intent = new Intent(PlayActivity.this, PlayMusicService.class);
+//        startService(intent);
+
+        Intent intent = new Intent("test.BroadcastReceiver");
+        sendBroadcast(intent);
+    }
+
+//    private void service() {
+//        musicConnection = new ServiceConnection() {
 //
-//        CreateNotification.createNotification(PlayActivity.this, audioModel, R.drawable.ic_play, 1, 1);
-    }
-
-    private void createChanel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-            NotificationChannel channel = new NotificationChannel(CreateNotification.CHANNEL_ID,
-                    "App music", NotificationManager.IMPORTANCE_LOW);
-            mNotificationManager = getSystemService(NotificationManager.class);
-            if (mNotificationManager != null){
-                mNotificationManager.createNotificationChannel(channel);
-            }
-
-        } else {
-            Toast.makeText(musicSrv, "aaaaaaaa", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void service() {
-        musicConnection = new ServiceConnection() {
-
-            @Override
-            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-                MusicService.MusicBinder binder = (MusicService.MusicBinder) iBinder;
-                //get service
-                musicSrv = binder.getService();
-                //pass list
-                musicSrv.setList(MainActivity.arrayList);
-                musicBound = true;
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName name) {
-                musicBound = false;
-            }
-        };
-    }
+//            @Override
+//            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+//                MusicService.MusicBinder binder = (MusicService.MusicBinder) iBinder;
+//                //get service
+//                musicSrv = binder.getService();
+//                //pass list
+//                musicSrv.setList(MainActivity.arrayList);
+//                musicBound = true;
+//            }
+//
+//            @Override
+//            public void onServiceDisconnected(ComponentName name) {
+//                musicBound = false;
+//            }
+//        };
+//    }
 
     @Override
     protected void onStart() {
@@ -118,6 +95,15 @@ public class PlayActivity extends AppCompatActivity {
         mBtnPlay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Intent intent = new Intent(PlayActivity.this, PlayMusicService.class);
+                startService(intent);
+//                intent.setAction("test.BroadcastReceiver");
+//                sendBroadcast(intent);
+//                IntentFilter intentFilter = new IntentFilter("test.BroadcastReceiver");
+//                mPendingIntent = PendingIntent.getBroadcast(PlayActivity.this,0,intent,PendingIntent.FLAG_UPDATE_CURRENT);
+//                Toast.makeText(musicSrv, ""+mPendingIntent, Toast.LENGTH_SHORT).show();
+
+
 //                if (mBooleanCheck) {
 //                    mMediaPlayer.pause();
 //                    mBooleanCheck = false;
@@ -128,17 +114,16 @@ public class PlayActivity extends AppCompatActivity {
 //                    mBooleanCheck = true;
 //                    rotate.start();
 //                }
-
                 // tạo thông báo
-                Intent resultIntent = new Intent(PlayActivity.this,MainActivity.class);
-                PendingIntent resultPending = PendingIntent.getActivity(PlayActivity.this,0,resultIntent,PendingIntent.FLAG_UPDATE_CURRENT);
-                NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(PlayActivity.this)
-                        .setSmallIcon(R.drawable.bg_musicerror)
-                        .setContentTitle(audioModel.getTitle())
-                        .setContentText("Test thử");
-                mBuilder.setContentIntent(resultPending);
-                NotificationManager mNtfctManager= (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                mNtfctManager.notify(0,mBuilder.build());
+//                Intent resultIntent = new Intent(PlayActivity.this,MainActivity.class);
+//                PendingIntent resultPending = PendingIntent.getActivity(PlayActivity.this,0,resultIntent,PendingIntent.FLAG_UPDATE_CURRENT);
+//                NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(PlayActivity.this)
+//                        .setSmallIcon(R.drawable.bg_musicerror)
+//                        .setContentTitle(audioModel.getTitle())
+//                        .setContentText("Test thử");
+//                mBuilder.setContentIntent(resultPending);
+//                NotificationManager mNtfctManager= (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+//                mNtfctManager.notify(0,mBuilder.build());
             }
         });
     }
@@ -224,7 +209,7 @@ public class PlayActivity extends AppCompatActivity {
                 break;
             case R.id.btnPlay:
                 stopService(playIntent);
-                musicSrv=null;
+                musicSrv = null;
                 System.exit(0);
                 break;
         }

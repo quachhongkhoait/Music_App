@@ -1,4 +1,4 @@
-package ahihi.khoane.music_app;
+package ahihi.khoane.music_app.utils;
 
 import android.content.Context;
 import android.database.Cursor;
