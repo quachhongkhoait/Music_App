@@ -9,20 +9,33 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.ContentUris;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import com.google.gson.Gson;
 
 import java.util.ArrayList;
 
 import ahihi.khoane.music_app.model.AudioModel;
 import ahihi.khoane.music_app.R;
+import ahihi.khoane.music_app.services.PlayMusicService;
+import ahihi.khoane.music_app.ui.detail.PlayActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -41,6 +54,11 @@ public class MainActivity extends AppCompatActivity {
         init();
         onValue();
         onEvent();
+    }
+
+    private void stopService() {
+        Intent intent = new Intent(this, PlayMusicService.class);
+        stopService(intent);
     }
 
 
@@ -92,6 +110,7 @@ public class MainActivity extends AppCompatActivity {
 //                String currentDuration = HandlingMusic.convertDuration(songCursor.getLong(songCursor.getColumnIndex(MediaStore.Audio.Media.DURATION)));
                 Long ur = songCursor.getLong(songID);
                 Uri trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, ur);
+                Log.d("nnn", "getMusic: "+ trackUri);
                 String albumId = songCursor.getString(songCursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID));
 
                 arrayList.add(new AudioModel(currentTitle, currentDuration, String.valueOf(trackUri), albumId));
@@ -118,6 +137,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onEvent() {
-
+//        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+//        SharedPreferences.Editor editor = sharedPrefs.edit();
+//        Gson gson = new Gson();
+//        String json = gson.toJson(arrayList);
+//        editor.putString("listmusic", json);
+//        editor.commit();
     }
+
 }

@@ -11,11 +11,13 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
 import ahihi.khoane.music_app.model.AudioModel;
+import ahihi.khoane.music_app.services.PlayMusicService;
 import ahihi.khoane.music_app.utils.HandlingMusic;
 import ahihi.khoane.music_app.ui.detail.PlayActivity;
 import ahihi.khoane.music_app.R;
@@ -72,15 +74,17 @@ public class AdapterAudio extends RecyclerView.Adapter<AdapterAudio.ViewHolder> 
                 @Override
                 public void onClick(View view) {
                     Intent mIntent = new Intent(mContext, PlayActivity.class);
-                    AudioModel audioModel = new AudioModel("", "", "", "");
-                    audioModel.setUrl(mLvAudioModel.get(getAdapterPosition()).getUrl());
-                    audioModel.setTitle(mLvAudioModel.get(getAdapterPosition()).getTitle());
-                    audioModel.setIdAlbum(mLvAudioModel.get(getAdapterPosition()).getIdAlbum());
-                    audioModel.setDuration(mLvAudioModel.get(getAdapterPosition()).getDuration());
-                    mIntent.putExtra("obj", audioModel);
                     mContext.startActivity(mIntent);
+
+                    Intent intent = new Intent(mContext, PlayMusicService.class);
+                    // Check API Version
+                    intent.putExtra("postion", getAdapterPosition());
+                    ContextCompat.startForegroundService(mContext, intent);
+//                    mContext.startService(intent);
+
                 }
             });
+
         }
     }
 }

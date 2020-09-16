@@ -3,8 +3,12 @@ package ahihi.khoane.music_app.ui.detail;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -21,20 +25,20 @@ import android.view.animation.RotateAnimation;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import ahihi.khoane.music_app.ui.main.MainActivity;
+import ahihi.khoane.music_app.utils.CreateNotification;
 import ahihi.khoane.music_app.utils.HandlingMusic;
 import ahihi.khoane.music_app.services.PlayMusicService;
 import ahihi.khoane.music_app.R;
 import ahihi.khoane.music_app.model.AudioModel;
 import ahihi.khoane.music_app.services.MusicService;
+import ahihi.khoane.music_app.utils.Playable;
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class PlayActivity extends AppCompatActivity {
+public class PlayActivity extends AppCompatActivity implements Playable{
 
     private static final String TAG = "zzz";
-    private ServiceConnection musicConnection;
-    private MusicService musicSrv;
     private Intent playIntent;
-    private boolean musicBound = false;
 
     RotateAnimation rotate;
     private MediaPlayer mMediaPlayer;
@@ -42,9 +46,11 @@ public class PlayActivity extends AppCompatActivity {
     TextView mTvTitle, mTvCurrentTime, mTvTotalTime;
     SeekBar mSeekBar;
     Handler mHandler = new Handler();
-    TextView mBtnPlay;
-    Boolean mBooleanCheck = true;
+    TextView mBtnPlay, mBtnPrevious, mBtnNext;
+    private boolean isPlaying = true;
     AudioModel audioModel;
+
+//    int position = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,12 +58,9 @@ public class PlayActivity extends AppCompatActivity {
         setContentView(R.layout.activity_play);
         init();
         onClick();
-
-//        Intent intent = new Intent(PlayActivity.this, PlayMusicService.class);
-//        startService(intent);
-
-        Intent intent = new Intent("test.BroadcastReceiver");
-        sendBroadcast(intent);
+        addData();
+//        Intent intent = new Intent("test.BroadcastReceiver");
+//        sendBroadcast(intent);
     }
 
 //    private void service() {
@@ -95,72 +98,63 @@ public class PlayActivity extends AppCompatActivity {
         mBtnPlay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(PlayActivity.this, PlayMusicService.class);
-                startService(intent);
-//                intent.setAction("test.BroadcastReceiver");
-//                sendBroadcast(intent);
-//                IntentFilter intentFilter = new IntentFilter("test.BroadcastReceiver");
-//                mPendingIntent = PendingIntent.getBroadcast(PlayActivity.this,0,intent,PendingIntent.FLAG_UPDATE_CURRENT);
-//                Toast.makeText(musicSrv, ""+mPendingIntent, Toast.LENGTH_SHORT).show();
-
-
-//                if (mBooleanCheck) {
-//                    mMediaPlayer.pause();
-//                    mBooleanCheck = false;
-////                    mImgAlbum.startAnimation(rotate);
-//                    rotate.cancel();
-//                } else {
-//                    mMediaPlayer.start();
-//                    mBooleanCheck = true;
-//                    rotate.start();
-//                }
-                // tạo thông báo
-//                Intent resultIntent = new Intent(PlayActivity.this,MainActivity.class);
-//                PendingIntent resultPending = PendingIntent.getActivity(PlayActivity.this,0,resultIntent,PendingIntent.FLAG_UPDATE_CURRENT);
-//                NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(PlayActivity.this)
-//                        .setSmallIcon(R.drawable.bg_musicerror)
-//                        .setContentTitle(audioModel.getTitle())
-//                        .setContentText("Test thử");
-//                mBuilder.setContentIntent(resultPending);
-//                NotificationManager mNtfctManager= (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-//                mNtfctManager.notify(0,mBuilder.build());
+                onMusicPlay();
+            }
+        });
+        mBtnPrevious.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onMusicPrevious();
+//                Log.d(TAG, "onClick: "+MainActivity.arrayList.size());
+            }
+        });
+        mBtnNext.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onMusicNext();
             }
         });
     }
 
     private void addData() {
-        audioModel = getIntent().getExtras().getParcelable("obj");
-        Uri uri = Uri.parse(audioModel.getUrl());
-        Bitmap bitmap = BitmapFactory.decodeFile(HandlingMusic.getCoverArtPath(Long.parseLong(audioModel.getIdAlbum()), this));
-        if (bitmap == null) {
-            mImgAlbum.setImageResource(R.drawable.bg_musicerror);
-        } else {
-            mImgAlbum.setImageBitmap(bitmap);
-        }
-        mTvTitle.setText(audioModel.getTitle());
-        mMediaPlayer = MediaPlayer.create(this, uri);
-        mMediaPlayer.start();
+        mMediaPlayer = PlayMusicService.mediaPlayer;
+        mSeekBar.setProgress(PlayMusicService.mediaPlayer.getCurrentPosition() / 1000 % 60);
+        mSeekBar.setMax(PlayMusicService.mediaPlayer.getDuration());
+        mTvTotalTime.setText(HandlingMusic.createTimerLabel(PlayMusicService.mediaPlayer.getDuration()));
+//        audioModel = getIntent().getExtras().getParcelable("obj");
+//        Uri uri = Uri.parse(audioModel.getUrl());
+//        Bitmap bitmap = BitmapFactory.decodeFile(HandlingMusic.getCoverArtPath(Long.parseLong(audioModel.getIdAlbum()), this));
+//        if (bitmap == null) {
+//            mImgAlbum.setImageResource(R.drawable.bg_musicerror);
+//        } else {
+//            mImgAlbum.setImageBitmap(bitmap);
+//        }
+//        mTvTitle.setText(audioModel.getTitle());
+//        mMediaPlayer = MediaPlayer.create(this, uri);
+//        mMediaPlayer.start();
 
-        rotate = new RotateAnimation(0, 10000, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-        rotate.setDuration(mMediaPlayer.getDuration());
+//        rotate = new RotateAnimation(0, 10000, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+//        rotate.setDuration(mMediaPlayer.getDuration());
 //        rotate.setInterpolator(new LinearInterpolator());
-        mImgAlbum.startAnimation(rotate);
+//        mImgAlbum.startAnimation(rotate);
 
         //xử lý
-        mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+        PlayMusicService.mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mediaPlayer) {
-                mSeekBar.setMax(mMediaPlayer.getDuration());
-                mTvTotalTime.setText(HandlingMusic.createTimerLabel(mMediaPlayer.getDuration()));
+//                Log.d(TAG, "onPrepared: ");
+//                mSeekBar.setProgress(PlayMusicService.mediaPlayer.getCurrentPosition() / 1000 % 60);
+//                mSeekBar.setMax(PlayMusicService.mediaPlayer.getDuration());
+//                mTvTotalTime.setText(HandlingMusic.createTimerLabel(PlayMusicService.mediaPlayer.getDuration()));
             }
         });
         mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 if (b) {
-                    mMediaPlayer.seekTo(i);
+                    PlayMusicService.mediaPlayer.seekTo(i);
                     mSeekBar.setProgress(i);
-                    mTvCurrentTime.setText(HandlingMusic.createTimerLabel(mMediaPlayer.getCurrentPosition()));
+                    mTvCurrentTime.setText(HandlingMusic.createTimerLabel(PlayMusicService.mediaPlayer.getCurrentPosition()));
                 }
             }
 
@@ -177,13 +171,13 @@ public class PlayActivity extends AppCompatActivity {
             @Override
             public void run() {
                 int min, sec;
-                if (mMediaPlayer != null) {
-                    mSeekBar.setProgress(mMediaPlayer.getCurrentPosition());
+                if (PlayMusicService.mediaPlayer != null) {
+                    mSeekBar.setProgress(PlayMusicService.mediaPlayer.getCurrentPosition());
                     int mCurrentPosition = mSeekBar.getProgress();
                     mTvCurrentTime.setText(HandlingMusic.createTimerLabel(mCurrentPosition));
                     if (mSeekBar.getProgress() == mSeekBar.getMax()) {
-                        rotate.cancel();
-                        mImgAlbum.startAnimation(rotate);
+//                        rotate.cancel();
+//                        mImgAlbum.startAnimation(rotate);
                     }
                 }
                 mHandler.postDelayed(this, 1000);
@@ -199,6 +193,8 @@ public class PlayActivity extends AppCompatActivity {
         mTvCurrentTime = findViewById(R.id.currentTime);
         mTvTotalTime = findViewById(R.id.totalTime);
         mBtnPlay = findViewById(R.id.btnPlay);
+        mBtnPrevious = findViewById(R.id.btnPrevious);
+        mBtnNext = findViewById(R.id.btnNext);
     }
 
     @Override
@@ -209,7 +205,6 @@ public class PlayActivity extends AppCompatActivity {
                 break;
             case R.id.btnPlay:
                 stopService(playIntent);
-                musicSrv = null;
                 System.exit(0);
                 break;
         }
@@ -245,7 +240,7 @@ public class PlayActivity extends AppCompatActivity {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState, @Nullable PersistableBundle persistentState) {
         super.onCreate(savedInstanceState, persistentState);
-        Log.d(TAG, "onCreate: ");
+        Log.d(TAG, "onCreate: 1");
     }
 
     @Override
@@ -253,4 +248,48 @@ public class PlayActivity extends AppCompatActivity {
         super.onRestart();
         Log.d(TAG, "onRestart: ");
     }
+
+    @Override
+    public void onMusicPrevious() {
+//        PlayMusicService.position--;
+////        CreateNotification.createNotification(this, MainActivity.arrayList.get(PlayMusicService.position),
+////                R.drawable.ic_baseline_pause_24, PlayMusicService.position, MainActivity.arrayList.size()-1);
+////        play(PlayMusicService.position);
+    }
+
+    @Override
+    public void onMusicPlay() {
+        CreateNotification.createNotification(this, MainActivity.arrayList.get(PlayMusicService.position),
+                R.drawable.ic_baseline_pause_24, PlayMusicService.position, MainActivity.arrayList.size()-1);
+        PlayMusicService.mediaPlayer.start();
+        mBtnPlay.setBackgroundResource(R.drawable.ic_baseline_pause_24);
+        isPlaying = true;
+    }
+
+    @Override
+    public void onMusicPause() {
+        CreateNotification.createNotification(this, MainActivity.arrayList.get(PlayMusicService.position),
+                R.drawable.ic_baseline_play_arrow_24, PlayMusicService.position, MainActivity.arrayList.size()-1);
+        PlayMusicService.mediaPlayer.pause();
+        mBtnPlay.setBackgroundResource(R.drawable.ic_baseline_play_arrow_24);
+        isPlaying = false;
+    }
+
+    @Override
+    public void onMusicNext() {
+        PlayMusicService.position++;
+        CreateNotification.createNotification(this, MainActivity.arrayList.get(PlayMusicService.position),
+                R.drawable.ic_baseline_pause_24, PlayMusicService.position, MainActivity.arrayList.size()-1);
+        play(PlayMusicService.position);
+    }
+
+    private void play(int po) {
+        if (PlayMusicService.mediaPlayer.isPlaying()){
+            PlayMusicService.mediaPlayer.stop();
+        }
+        Uri uri = Uri.parse(MainActivity.arrayList.get(po).getUrl());//"content://media/external/audio/media/25"
+        PlayMusicService.mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
+        PlayMusicService.mediaPlayer.start();
+    }
+
 }

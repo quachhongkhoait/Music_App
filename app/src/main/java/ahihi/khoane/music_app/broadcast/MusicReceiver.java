@@ -1,4 +1,4 @@
-package ahihi.khoane.music_app.services;
+package ahihi.khoane.music_app.broadcast;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
