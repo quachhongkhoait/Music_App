@@ -17,6 +17,7 @@ import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
@@ -30,6 +31,10 @@ import androidx.core.app.NotificationManagerCompat;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,17 +42,23 @@ import java.util.List;
 import ahihi.khoane.music_app.App;
 import ahihi.khoane.music_app.R;
 import ahihi.khoane.music_app.broadcast.NotificationActionService;
+import ahihi.khoane.music_app.interfacce.ServiceCallbacks;
 import ahihi.khoane.music_app.model.AudioModel;
+import ahihi.khoane.music_app.model.CallBackModel;
 import ahihi.khoane.music_app.ui.detail.PlayActivity;
 import ahihi.khoane.music_app.ui.main.MainActivity;
 import ahihi.khoane.music_app.utils.CreateNotification;
 import ahihi.khoane.music_app.utils.HandlingMusic;
 import ahihi.khoane.music_app.utils.Playable;
 
+import static ahihi.khoane.music_app.App.mBroadcaster;
+
 public class PlayMusicService extends Service implements Playable {
+
+
     private static final String TAG = "nnn";
     public static MediaPlayer mediaPlayer;
-    private boolean isPlaying = true;
+    public static boolean isPlaying = true;
     public static int position;
 //    private List<AudioModel> arrayList;
 
@@ -60,73 +71,33 @@ public class PlayMusicService extends Service implements Playable {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         registerReceiver(broadcastReceiver, new IntentFilter("TRACKS_TRACKS"));
-        position = intent.getIntExtra("postion",0);
+        position = intent.getIntExtra("postion", 0);
         initMediaPlayer();
         play(position);
 
-        CreateNotification.createNotification(this, MainActivity.arrayList.get(position),
-                R.drawable.ic_baseline_pause_24, position, MainActivity.arrayList.size()-1);
-        startForeground(1, CreateNotification.notification);
-
-//        Bitmap icon = BitmapFactory.decodeFile(HandlingMusic.getCoverArtPath(Long.parseLong(MainActivity.arrayList.get(postion).getIdAlbum()), this));
-//
-//        PendingIntent pendingIntentPrevious;
-//            int drw_previous;
-//            if (postion == 0){
-//                pendingIntentPrevious = null;
-//                drw_previous = 0;
-//            } else {
-//                Intent intentPrevious = new Intent(this, NotificationActionService.class)
-//                        .setAction("ACTION_PREVIUOS");
-//                pendingIntentPrevious = PendingIntent.getBroadcast(this, 0,
-//                        intentPrevious, PendingIntent.FLAG_UPDATE_CURRENT);
-//                drw_previous = R.drawable.ic_back;
-//            }
-//
-//            Intent intentPlay = new Intent(this, NotificationActionService.class)
-//                    .setAction("ACTION_PLAY");
-//            PendingIntent pendingIntentPlay = PendingIntent.getBroadcast(this, 0,
-//                    intentPlay, PendingIntent.FLAG_UPDATE_CURRENT);
-//
-//            PendingIntent pendingIntentNext;
-//            int drw_next;
-//            if (postion == MainActivity.arrayList.size()){
-//                pendingIntentNext = null;
-//                drw_next = 0;
-//            } else {
-//                Intent intentNext = new Intent(this, NotificationActionService.class)
-//                        .setAction("ACTION_NEXT");
-//                pendingIntentNext = PendingIntent.getBroadcast(this, 0,
-//                        intentNext, PendingIntent.FLAG_UPDATE_CURRENT);
-//                drw_next = R.drawable.ic_skip;
-//            }
-//
-//        Intent notificationIntent = new Intent(this, PlayActivity.class);
-//        PendingIntent pendingIntent = PendingIntent.getActivity(this,0,notificationIntent,0);
-//
-//        Notification notification = new NotificationCompat.Builder(this, App.CHANNEL_ID)
-//                .setContentTitle(MainActivity.arrayList.get(postion).getTitle())
-//                .setContentText(MainActivity.arrayList.get(postion).getDuration())
-//                .setSmallIcon(R.drawable.ic_baseline_music_note_24)
-//                .setLargeIcon(icon)
-//                .addAction(drw_previous,"", pendingIntentPrevious)
-//                .addAction(R.drawable.ic_play,"", pendingIntentPlay)
-//                .addAction(drw_next,"", pendingIntentNext)
-//                .setContentIntent(pendingIntent)
-//                .build();
-//        startForeground(1, notification);
-
-//        startForeground(1, CreateNotification.notification);
         return START_NOT_STICKY;
     }
 
     private void play(int po) {
-        if (mediaPlayer.isPlaying()){
+        if (mediaPlayer.isPlaying()) {
             mediaPlayer.stop();
         }
-        Uri uri = Uri.parse(MainActivity.arrayList.get(po).getUrl());//"content://media/external/audio/media/25"
-        mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
-        mediaPlayer.start();
+            Uri uri = Uri.parse(MainActivity.arrayList.get(po).getUrl());//"content://media/external/audio/media/25"
+            mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
+            mediaPlayer.start();
+            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mediaPlayer) {
+                    if (position >= (MainActivity.arrayList.size() - 1)) {
+                        mediaPlayer.stop();
+                    } else {
+                        onMusicNext();
+                    }
+                }
+            });
+            CreateNotification.createNotification(this, MainActivity.arrayList.get(position),
+                    R.drawable.ic_baseline_pause_24, position, MainActivity.arrayList.size() - 1);
+            startForeground(1, CreateNotification.notification);
     }
 
     private void initMediaPlayer() {
@@ -139,13 +110,13 @@ public class PlayMusicService extends Service implements Playable {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getExtras().getString("actionname");
-            Log.d(TAG, "onReceive: "+action);
-            switch (action){
+            Log.d(TAG, "onReceive: " + action);
+            switch (action) {
                 case "ACTION_PREVIUOS":
                     onMusicPrevious();
                     break;
                 case "ACTION_PLAY":
-                    if (isPlaying){
+                    if (isPlaying) {
                         onMusicPause();
                     } else {
                         onMusicPlay();
@@ -166,35 +137,74 @@ public class PlayMusicService extends Service implements Playable {
     public void onMusicPrevious() {
         position--;
         CreateNotification.createNotification(this, MainActivity.arrayList.get(position),
-                R.drawable.ic_baseline_pause_24, position, MainActivity.arrayList.size()-1);
+                R.drawable.ic_baseline_pause_24, position, MainActivity.arrayList.size() - 1);
         startForeground(1, CreateNotification.notification);
         play(position);
+        EventBus.getDefault().post(new AudioModel(MainActivity.arrayList.get(position).getTitle(),
+                MainActivity.arrayList.get(position).getDuration(),
+                MainActivity.arrayList.get(position).getUrl(), MainActivity.arrayList.get(position).getIdAlbum()));
     }
 
     @Override
     public void onMusicPlay() {
         CreateNotification.createNotification(this, MainActivity.arrayList.get(position),
-                R.drawable.ic_baseline_pause_24, position, MainActivity.arrayList.size()-1);
+                R.drawable.ic_baseline_pause_24, position, MainActivity.arrayList.size() - 1);
         startForeground(1, CreateNotification.notification);
         isPlaying = true;
         mediaPlayer.start();
+        EventBus.getDefault().post(new AudioModel(MainActivity.arrayList.get(position).getTitle(),
+                MainActivity.arrayList.get(position).getDuration(),
+                MainActivity.arrayList.get(position).getUrl(), MainActivity.arrayList.get(position).getIdAlbum()));
     }
 
     @Override
     public void onMusicPause() {
         CreateNotification.createNotification(this, MainActivity.arrayList.get(position),
-                R.drawable.ic_baseline_play_arrow_24, position, MainActivity.arrayList.size()-1);
+                R.drawable.ic_baseline_play_arrow_24, position, MainActivity.arrayList.size() - 1);
         startForeground(1, CreateNotification.notification);
         isPlaying = false;
         mediaPlayer.pause();
+        EventBus.getDefault().post(new AudioModel(MainActivity.arrayList.get(position).getTitle(),
+                MainActivity.arrayList.get(position).getDuration(),
+                MainActivity.arrayList.get(position).getUrl(), MainActivity.arrayList.get(position).getIdAlbum()));
     }
 
     @Override
     public void onMusicNext() {
         position++;
         CreateNotification.createNotification(this, MainActivity.arrayList.get(position),
-                R.drawable.ic_baseline_pause_24, position, MainActivity.arrayList.size()-1);
+                R.drawable.ic_baseline_pause_24, position, MainActivity.arrayList.size() - 1);
         startForeground(1, CreateNotification.notification);
         play(position);
+        EventBus.getDefault().post(new AudioModel(MainActivity.arrayList.get(position).getTitle(),
+                MainActivity.arrayList.get(position).getDuration(),
+                MainActivity.arrayList.get(position).getUrl(), MainActivity.arrayList.get(position).getIdAlbum()));
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void call(CallBackModel callBackModel) {
+        if (callBackModel.getA().equals("0")) {
+            onMusicPrevious();
+        } else if (callBackModel.getA().equals("1")) {
+            if (isPlaying) {
+                onMusicPause();
+            } else {
+                onMusicPlay();
+            }
+        } else {
+            onMusicNext();
+        }
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        EventBus.getDefault().register(this);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
     }
 }

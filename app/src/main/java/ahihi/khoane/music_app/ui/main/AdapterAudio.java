@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
+import ahihi.khoane.music_app.interfacce.OnClick;
 import ahihi.khoane.music_app.model.AudioModel;
 import ahihi.khoane.music_app.services.PlayMusicService;
 import ahihi.khoane.music_app.utils.HandlingMusic;
@@ -25,8 +26,14 @@ import de.hdodenhof.circleimageview.CircleImageView;
 
 public class AdapterAudio extends RecyclerView.Adapter<AdapterAudio.ViewHolder> {
 
+    interface OnClickItemMusicListener {
+        void onclickItem(int position);
+    }
+
+    private OnClickItemMusicListener onClickItemMusicListener;
     Context mContext;
     List<AudioModel> mLvAudioModel;
+
 
     public AdapterAudio(Context context, List<AudioModel> items) {
         this.mContext = context;
@@ -43,7 +50,7 @@ public class AdapterAudio extends RecyclerView.Adapter<AdapterAudio.ViewHolder> 
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, final int position) {
         holder.mTvTitle.setText(mLvAudioModel.get(position).getTitle());
         holder.mTvDuration.setText(HandlingMusic.createTimerLabel(Integer.parseInt(mLvAudioModel.get(position).getDuration())));
         Bitmap bitmap = BitmapFactory.decodeFile(HandlingMusic.getCoverArtPath(Long.parseLong(mLvAudioModel.get(position).getIdAlbum()), mContext));
@@ -52,6 +59,12 @@ public class AdapterAudio extends RecyclerView.Adapter<AdapterAudio.ViewHolder> 
         } else {
             holder.mImgAlbum.setImageBitmap(bitmap);
         }
+        holder.mCardView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onClickItemMusicListener.onclickItem(position);
+            }
+        });
     }
 
     @Override
@@ -70,21 +83,23 @@ public class AdapterAudio extends RecyclerView.Adapter<AdapterAudio.ViewHolder> 
             mTvDuration = itemView.findViewById(R.id.tvDuration);
             mImgAlbum = itemView.findViewById(R.id.imageAlbum);
             mCardView = itemView.findViewById(R.id.cardview);
-            mCardView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Intent mIntent = new Intent(mContext, PlayActivity.class);
-                    mContext.startActivity(mIntent);
-
-                    Intent intent = new Intent(mContext, PlayMusicService.class);
-                    // Check API Version
-                    intent.putExtra("postion", getAdapterPosition());
-                    ContextCompat.startForegroundService(mContext, intent);
-//                    mContext.startService(intent);
-
-                }
-            });
-
+//            mCardView.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View view) {
+//                    Intent mIntent = new Intent(mContext, PlayActivity.class);
+//                    mContext.startActivity(mIntent);
+//                    Intent intent = new Intent(mContext, PlayMusicService.class);
+//                    //Check API Version
+//                    intent.putExtra("postion",
+//
+//                            getAdapterPosition());
+//                    ContextCompat.startForegroundService(mContext, intent);
+//                }
+//            });
         }
+    }
+
+    public void setOnClickItemMusicListener(OnClickItemMusicListener onClickItemMusicListener) {
+        this.onClickItemMusicListener = onClickItemMusicListener;
     }
 }

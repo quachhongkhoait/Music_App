@@ -30,6 +30,8 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.util.ArrayList;
 
 import ahihi.khoane.music_app.model.AudioModel;
@@ -37,7 +39,7 @@ import ahihi.khoane.music_app.R;
 import ahihi.khoane.music_app.services.PlayMusicService;
 import ahihi.khoane.music_app.ui.detail.PlayActivity;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements AdapterAudio.OnClickItemMusicListener {
 
     public static ArrayList<AudioModel> arrayList = new ArrayList<>();
     AdapterAudio adapter;
@@ -54,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
         init();
         onValue();
         onEvent();
+        adapter.setOnClickItemMusicListener(this);
     }
 
     private void stopService() {
@@ -110,7 +113,6 @@ public class MainActivity extends AppCompatActivity {
 //                String currentDuration = HandlingMusic.convertDuration(songCursor.getLong(songCursor.getColumnIndex(MediaStore.Audio.Media.DURATION)));
                 Long ur = songCursor.getLong(songID);
                 Uri trackUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, ur);
-                Log.d("nnn", "getMusic: "+ trackUri);
                 String albumId = songCursor.getString(songCursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID));
 
                 arrayList.add(new AudioModel(currentTitle, currentDuration, String.valueOf(trackUri), albumId));
@@ -145,4 +147,17 @@ public class MainActivity extends AppCompatActivity {
 //        editor.commit();
     }
 
+    @Override
+    public void onclickItem(int position) {
+        Intent mIntent = new Intent(this, PlayActivity.class);
+        mIntent.putExtra("postion", position);
+        startActivity(mIntent);
+        Intent intent = new Intent(this, PlayMusicService.class);
+        // Check API Version
+        intent.putExtra("postion", position);
+        ContextCompat.startForegroundService(this, intent);
+        EventBus.getDefault().post(new AudioModel(MainActivity.arrayList.get(position).getTitle(),
+                MainActivity.arrayList.get(position).getDuration(),
+                MainActivity.arrayList.get(position).getUrl(), MainActivity.arrayList.get(position).getIdAlbum()));
+    }
 }
